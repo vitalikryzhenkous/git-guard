@@ -1,6 +1,8 @@
 """Аудит истории: gitleaks + термины. Печатает repo, commit, file, type — без значений."""
 import json, os, subprocess, sys, tempfile
-from git_guard import terms
+import argparse
+from collections import Counter
+from git_guard import terms, rules
 
 
 def repos(root=os.path.expanduser("~/apps")):
@@ -22,6 +24,25 @@ def leaks(repo):
         except (OSError, ValueError):
             return None
     return [(r.get("Commit", "")[:10], r.get("File", ""), "secret:" + r.get("RuleID", "?")) for r in data or []]
+
+
+def path_hits(repo, pat):
+    """Имена файлов по всей истории: denylist и термины в пути."""
+    p = subprocess.Popen(["git", "-C", repo, "log", "--all", "--name-only", "--no-color", "-z",
+                          "--format=@@C %H"], stdout=subprocess.PIPE, text=True,
+                         encoding="utf-8", errors="replace")
+    hits, commit = set(), None
+    for tok in p.stdout.read().split("\0"):
+        for line in tok.split("\n"):
+            if line.startswith("@@C "):
+                commit = line[4:14]
+            elif line:
+                if rules.denied_path(line):
+                    hits.add((commit, line, "denylist-path"))
+                if pat and pat.search(line):
+                    hits.add((commit, line, "term-path"))
+    p.wait()
+    return sorted(hits)
 
 
 def term_hits(repo, pat):
@@ -55,6 +76,7 @@ def main():
             found = []
         if pat:
             found += term_hits(repo, pat)
+        found += path_hits(repo, pat)
         for c, f, t in sorted(set(found)):
             print(f"{name}\t{c}\t{f}\t{t}")
         print(f"{name}\t# total {len(found)}")
