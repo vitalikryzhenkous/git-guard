@@ -1,0 +1,22 @@
+# Шаблон для ПУБЛИЧНЫХ репо: положить в .github/workflows/gitleaks.yml (git-guard сам ничего не ставит).
+# SHA и версии взяты из официального workflow gitleaks (context7, /gitleaks/gitleaks); перед использованием сверь с релизами.
+# gitleaks-action v3: для личных аккаунтов лицензия не нужна, для организаций — секрет GITLEAKS_LICENSE.
+name: gitleaks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # вся история
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # только для организаций

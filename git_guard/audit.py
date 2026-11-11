@@ -2,7 +2,7 @@
 import json, os, subprocess, sys, tempfile
 import argparse
 from collections import Counter
-from git_guard import terms, rules, exclude
+from git_guard import terms, rules, exclude, config
 
 
 def repos(root=os.path.expanduser("~/apps")):
@@ -32,12 +32,13 @@ def path_hits(repo, pat):
                           "--format=@@C %H"], stdout=subprocess.PIPE, text=True,
                          encoding="utf-8", errors="replace")
     hits, commit = set(), None
+    cfg = config.load(repo)
     for tok in p.stdout.read().split("\0"):
         for line in tok.split("\n"):
             if line.startswith("@@C "):
                 commit = line[4:14]
             elif line:
-                if rules.denied_path(line):
+                if rules.denied_path(line, cfg):
                     hits.add((commit, line, "denylist-path"))
                 if pat and pat.search(line):
                     hits.add((commit, line, "term-path"))

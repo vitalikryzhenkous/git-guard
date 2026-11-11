@@ -15,7 +15,8 @@ pre-push проверяет все отправляемые коммиты, а �
 ## Конфиг
 - config/default.yaml — общие правила (в git)
 - ~/.config/git-guard/terms.txt — приватный словарь, НЕ в git
-- .git-guard.yaml в репо — локальные исключения
+- .git-guard.yaml в репо — локальные правила (deny_names, deny_dirs, …; списки добавляются к общим)
+- ~/.config/git-guard/exclude-repos.txt — репо вне контура (аудит и хуки: «excluded»; хук репо всё равно вызывается)
 
 ## Команды
 git-guard audit [repo]   # скан всей истории, без вывода значений

@@ -1,0 +1,27 @@
+# Общий минимум git-guard. Репо добавляет своё в .git-guard.yaml (списки складываются).
+max_files: 30
+max_bytes: 1048576
+deny_names:
+  - pipeline.yaml
+  - log.jsonl
+env_prefix: .env
+env_allow:
+  - .env.example
+  - .env.sample
+  - .env.template
+# регулярки по пути (компоненты каталогов)
+path_patterns:
+  - (^|/)(Users|AppData)/
+  - (^|/)[^/]*(Chrome|Lighthouse)[^/]*/
+  - (^|/)[^/]*profile[^/]*/
+# каталоги-тесты: найденные термины там — warn, не block
+test_globs:
+  - "*Tests/*"
+  - "*.test.*"
+  - "*-vectors.json"
+  - "tests/*"
+  - "*/tests/*"
+  - "fixtures/*"
+  - "*/fixtures/*"
+  - "evals/*"
+  - "*/evals/*"

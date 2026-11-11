@@ -24,7 +24,8 @@ def csv_company(path):
                 yield v
 
 
-def load(path=TERMS):
+def load(path=None):
+    path = path or os.environ.get("GUARD_TERMS_FILE") or TERMS
     if not os.path.exists(path):
         return []
     with open(path, encoding="utf-8") as f:
