@@ -2,7 +2,7 @@
 import json, os, subprocess, sys, tempfile
 import argparse
 from collections import Counter
-from git_guard import terms, rules
+from git_guard import terms, rules, exclude
 
 
 def repos(root=os.path.expanduser("~/apps")):
@@ -62,24 +62,32 @@ def term_hits(repo, pat):
     return sorted(hits)
 
 
+def audit_repo(repo, pat, excluded=None):
+    """Строки отчёта для одного репо: repo, commit, file, type — без значений."""
+    name = os.path.basename(repo)
+    if exclude.is_excluded(repo, excluded):
+        return [f"{name}\t-\t-\texcluded"]
+    if not has_commits(repo):
+        return [f"{name}\t-\t-\tno-commits"]
+    out = []
+    found = leaks(repo)
+    if found is None:
+        out.append(f"{name}\t-\t-\tgitleaks-error")
+        found = []
+    if pat:
+        found += term_hits(repo, pat)
+    found += path_hits(repo, pat)
+    out += [f"{name}\t{c}\t{f}\t{t}" for c, f, t in sorted(set(found))]
+    out.append(f"{name}\t# total {len(found)}")
+    return out
+
+
 def main():
     pat = terms.pattern(terms.load())
+    excluded = exclude.load()
     print(f"terms: {'on' if pat else 'EMPTY'}")
     for repo in repos():
-        name = os.path.basename(repo)
-        if not has_commits(repo):
-            print(f"{name}\t-\t-\tno-commits")
-            continue
-        found = leaks(repo)
-        if found is None:
-            print(f"{name}\t-\t-\tgitleaks-error")
-            found = []
-        if pat:
-            found += term_hits(repo, pat)
-        found += path_hits(repo, pat)
-        for c, f, t in sorted(set(found)):
-            print(f"{name}\t{c}\t{f}\t{t}")
-        print(f"{name}\t# total {len(found)}")
+        print("\n".join(audit_repo(repo, pat, excluded)))
 
 
 if __name__ == "__main__":
