@@ -1,5 +1,5 @@
 """Правила путей. Конфиг — config.load(repo)."""
-import fnmatch, re
+import re
 
 
 def denied_path(path, cfg):
@@ -15,7 +15,3 @@ def denied_path(path, cfg):
         return "path"
     return None
 
-
-def is_test_path(path, cfg=None):
-    globs = (cfg or {}).get("test_globs") or ["*Tests/*", "*.test.*", "*-vectors.json", "tests/*", "*/tests/*", "fixtures/*", "*/fixtures/*", "evals/*", "*/evals/*"]
-    return any(fnmatch.fnmatch(path, g) for g in globs)

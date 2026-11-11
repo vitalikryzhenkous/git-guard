@@ -65,10 +65,47 @@ def test_term_blocks_whole_word_case_insensitive_never_printed(mk):
     assert r2.commit("n.txt").returncode == 0
 
 
-def test_term_in_test_path_only_warns(mk):
+def test_term_in_tests_blocks_everywhere(mk):
     r = mk(); r.write("tests/fixtures/a.txt", f"{SYN_TERM}\n")
     res = r.commit("tests/fixtures/a.txt")
-    assert res.returncode == 0 and "test-path:warn" in res.stderr
+    assert BLOCK(res) and "term" in res.stderr
+
+
+def test_term_allow_with_reason_passes_without_reason_errors(mk):
+    r = mk(); r.write(".git-guard.yaml", "allow_terms:\n  - tests/fixtures/*.txt | синтетика\n")
+    r.write("tests/fixtures/a.txt", f"{SYN_TERM}\n"); r.write("src/b.txt", f"{SYN_TERM}\n")
+    res = r.commit("tests/fixtures/a.txt"); assert res.returncode == 0 and "allowed: синтетика" in res.stderr
+    assert BLOCK(r.commit("src/b.txt"))                          # allow только на свой путь
+    r2 = mk(); r2.write(".git-guard.yaml", "allow_terms:\n  - tests/*.txt\n"); r2.write("a.txt")
+    res = r2.commit("a.txt"); assert BLOCK(res) and "config-error" in res.stderr
+
+
+import pytest
+@pytest.mark.parametrize("yaml", [
+    "deny_names: [a.yaml, b.yaml]\n",            # flow-список
+    "deny_names:\n\t- a.yaml\n",                  # табуляция
+    "deny_names:\n  sub:\n    - a\n",            # вложенность
+    "unknown_key:\n  - a\n",                     # опечатка в ключе
+    "max_files: много\n",                         # неверный тип
+    "base: &x\n  - a\n",                          # якорь
+])
+def test_unsupported_config_blocks_commit(mk, yaml):
+    r = mk(); r.write(".git-guard.yaml", yaml); r.write("a.txt")
+    res = r.commit("a.txt"); assert BLOCK(res) and "config-error" in res.stderr
+
+
+def test_valid_config_clean_commit_passes(mk):
+    r = mk(); r.write(".git-guard.yaml", "# ok\ndeny_names:\n  - x.yaml   # коммент\nmax_files: 40\n"); r.write("a.txt")
+    assert r.commit(".git-guard.yaml", "a.txt").returncode == 0
+
+
+def test_other_hook_wrappers_only_chain_repo_hook(mk):
+    r = mk(); r.write("a.txt"); r.write("pipeline.yaml")
+    r.write(".githooks/commit-msg", "#!/bin/sh\ngrep -q WIP \"$1\" && exit 1\nexit 0\n"); os.chmod(r.p / ".githooks/commit-msg", 0o755)
+    assert r.commit("a.txt", msg="WIP x").returncode != 0        # хук репо через обёртку
+    assert r.commit("a.txt", msg="ok").returncode == 0
+    r2 = mk(); r2.write("a.txt")                                   # без хука репо обёртка молчит
+    assert r2.commit("a.txt").returncode == 0
 
 
 def test_repo_hook_chained(mk):

@@ -71,6 +71,10 @@ def audit_repo(repo, pat, excluded=None):
     if not has_commits(repo):
         return [f"{name}\t-\t-\tno-commits"]
     out = []
+    try:
+        config.load(repo)
+    except config.ConfigError:
+        return [f"{name}\t-\t.git-guard.yaml\tconfig-error"]
     found = leaks(repo)
     if found is None:
         out.append(f"{name}\t-\t-\tgitleaks-error")

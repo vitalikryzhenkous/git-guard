@@ -14,14 +14,7 @@ path_patterns:
   - (^|/)(Users|AppData)/
   - (^|/)[^/]*(Chrome|Lighthouse)[^/]*/
   - (^|/)[^/]*profile[^/]*/
-# каталоги-тесты: найденные термины там — warn, не block
-test_globs:
-  - "*Tests/*"
-  - "*.test.*"
-  - "*-vectors.json"
-  - "tests/*"
-  - "*/tests/*"
-  - "fixtures/*"
-  - "*/fixtures/*"
-  - "evals/*"
-  - "*/evals/*"
+# дополняется в .git-guard.yaml репо
+deny_dirs:
+# термины блокируют везде; исключение — явный allow: "- путь-или-glob | причина"
+allow_terms:

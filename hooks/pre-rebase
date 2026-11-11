@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# git-guard pre-rebase: логика в git_guard/hook.py
+d="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+PYTHONPATH="$d" exec python3 -P -m git_guard.hook pre-rebase "$@"

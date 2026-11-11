@@ -19,12 +19,14 @@ pre-push проверяет все отправляемые коммиты, а �
 - ~/.config/git-guard/exclude-repos.txt — репо вне контура (аудит и хуки: «excluded»; хук репо всё равно вызывается)
 
 ## Команды
-git-guard audit [repo]   # скан всей истории, без вывода значений
-git-guard check          # ручной прогон по staged
-git-guard terms sync     # подтянуть термины из job-radar/pipeline.yaml
+python3 -m git_guard.audit            # скан всей истории всех репо в ~/apps, без вывода значений
+python3 -m git_guard.check [repo...]  # staged, а если пусто — дерево HEAD; только счётчики
+python3 -m git_guard.doctor           # отчёт: локальные core.hooksPath, excluded, gitleaks, terms.txt
+python3 -m git_guard.terms            # подтянуть термины (slug из pipeline.yaml + company из index.csv)
 
 ## Хуки репо
-Глобальный хук вызывает .githooks/ или scripts/hooks/ репо после своих проверок.
+Глобальные обёртки (pre-commit, pre-push + commit-msg, prepare-commit-msg, post-commit, post-merge, post-checkout, pre-rebase) вызывают хук репо: .githooks/, scripts/hooks/ или .git/hooks/ (первый найденный). Локальный core.hooksPath в репо перекрывает глобальный — смотри doctor.
+Термины блокируют везде; исключение — `allow_terms` в .git-guard.yaml: `- путь-или-glob | причина`. Неподдерживаемый синтаксис конфига = ошибка и блок.
 
 ## Ограничения
 Не переписывает историю. Не защищает от `--no-verify` — это запрещено правилами агентов.

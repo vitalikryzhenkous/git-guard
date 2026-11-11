@@ -1,5 +1,5 @@
 """Хуки pre-commit / pre-push. Печатает только: репо, коммит, файл, тип — без значений."""
-import json, os, subprocess, sys, tempfile
+import fnmatch, json, os, subprocess, sys, tempfile
 from git_guard import config, exclude, rules, terms
 
 ZERO = "0" * 40
@@ -60,8 +60,8 @@ def check_commit(repo, ref, cfg, pat, big_ok):
         for f, line in added_lines(repo, ref):
             if f not in seen and pat.search(line):
                 seen.add(f)
-                test = rules.is_test_path(f, cfg)
-                res.append((label, f, "term(test-path:warn)" if test else "term", not test))
+                why = next((r for g, r in config.allow_terms(cfg) if fnmatch.fnmatch(f, g)), None)
+                res.append((label, f, f"term(allowed: {why})" if why else "term", not why))
     return res
 
 
@@ -114,9 +114,16 @@ def chain(repo, name, args, stdin_text):
 def run(name, args, repo=None, stdin_text=""):
     repo = repo or git(os.getcwd(), "rev-parse", "--show-toplevel").strip()
     if exclude.is_excluded(repo):
-        print(f"git-guard: {os.path.basename(repo)} excluded", file=sys.stderr)
+        if name in ("pre-commit", "pre-push"):
+            print(f"git-guard: {os.path.basename(repo)} excluded", file=sys.stderr)
         return chain(repo, name, args, stdin_text)
-    cfg = config.load(repo)
+    if name not in ("pre-commit", "pre-push"):
+        return chain(repo, name, args, stdin_text)
+    try:
+        cfg = config.load(repo)
+    except config.ConfigError as e:
+        print(f"git-guard ✗ {os.path.basename(repo)}\t-\t.git-guard.yaml\tconfig-error: {e}", file=sys.stderr)
+        return 1
     pat = terms.pattern(terms.load())
     big_ok = os.environ.get("GUARD_ALLOW_BIG") == "1"
     if name == "pre-commit":
@@ -134,4 +141,4 @@ def run(name, args, repo=None, stdin_text=""):
 
 
 if __name__ == "__main__":
-    sys.exit(run(sys.argv[1], sys.argv[2:], stdin_text="" if sys.argv[1] == "pre-commit" else sys.stdin.read()))
+    sys.exit(run(sys.argv[1], sys.argv[2:], stdin_text=sys.stdin.read() if sys.argv[1] == "pre-push" else ""))
