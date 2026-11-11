@@ -2,7 +2,7 @@
 
 ## DoD
 - [x] 0. Аудит: репо в ~/apps, gitleaks по истории, термины по истории; отчёт без значений; ничего не исправлено
-- [ ] 1. ~/.config/git/ignore: .env*, *.local.*, профили Chrome/Lighthouse, AppData/, *.pem, *.key (diff показан)
+- [x] 1. ~/.config/git/ignore: .env*, *.local.*, профили Chrome/Lighthouse, AppData/, *.pem, *.key (diff показан)
 - [ ] 2. Python git_guard/ + bash-хуки ≤5 строк (pre-commit, pre-push), лимиты, пути, denylist, gitleaks, термины, хук репо; core.hooksPath
 - [ ] 3. pytest во временных репо: каждый блок ✗ + чистый коммит ✓
 - [ ] 4. ~/.claude/CLAUDE.md, раздел «Git»
